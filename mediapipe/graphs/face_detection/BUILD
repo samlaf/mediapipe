@@ -67,3 +67,5 @@ mediapipe_binary_graph(
     output_name = "face_detection_mobile_gpu.binarypb",
     deps = [":mobile_calculators"],
 )
+
+exports_files(["face_detection_desktop_live.pbtxt"])

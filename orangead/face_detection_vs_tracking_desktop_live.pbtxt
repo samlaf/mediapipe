@@ -1,0 +1,35 @@
+# MediaPipe graph that performs face mesh with TensorFlow Lite on CPU.
+
+# CPU buffer. (ImageFrame)
+input_stream: "input_video"
+# Output concatenated image. (ImageFrame)
+output_stream: "output_video"
+
+# Subgraph that detects faces.
+node {
+  calculator: "FaceDetectionDesktopLiveSubgraph"
+  input_stream: "input_video"
+  output_stream: "detect_output_video"
+  output_stream: "face_detections"
+}
+
+# Subgraph that tracks faces.
+node {
+  calculator: "FaceDetectionTrackingDesktopLiveSubgraph"
+  input_stream: "input_video"
+  output_stream: "tracking_output_video"
+}
+
+# # "Subgraph" that does nothing.
+# node {
+#   calculator: "PassThroughCalculator"
+#   input_stream: "input_video"
+#   output_stream: "image1"
+# }
+
+node {
+  calculator: "VideoMultiplexer"
+  input_stream: "IMAGE:0:detect_output_video"
+  input_stream: "IMAGE:1:tracking_output_video"
+  output_stream: "IMAGE:output_video"
+}
