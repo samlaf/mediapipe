@@ -27,8 +27,6 @@
 #include "mediapipe/framework/port/parse_text_proto.h"
 #include "mediapipe/framework/port/status.h"
 
-constexpr char kInputStream[] = "input_video";
-constexpr char kOutputStream[] = "output_video";
 constexpr char kWindowName[] = "MediaPipe";
 
 ABSL_FLAG(std::string, calculator_graph_config_file, "",
@@ -39,6 +37,10 @@ ABSL_FLAG(std::string, input_video_path, "",
 ABSL_FLAG(std::string, output_video_path, "",
           "Full path of where to save result (.mp4 only). "
           "If not provided, show result in a window.");
+ABSL_FLAG(std::string, output_stream_name, "output_video",
+          "Name of output stream to listen on.");
+ABSL_FLAG(std::string, input_stream_name, "input_video",
+          "Name of input stream to pass initial images to.");
 
 absl::Status RunMPPGraph() {
   std::string calculator_graph_config_contents;
@@ -57,6 +59,7 @@ absl::Status RunMPPGraph() {
 
   LOG(INFO) << "Initialize the camera or load the video.";
   cv::VideoCapture capture;
+  std::cout << absl::GetFlag(FLAGS_input_video_path) << std::endl;
   const bool load_video = !absl::GetFlag(FLAGS_input_video_path).empty();
   if (load_video) {
     capture.open(absl::GetFlag(FLAGS_input_video_path));
@@ -75,6 +78,9 @@ absl::Status RunMPPGraph() {
     capture.set(cv::CAP_PROP_FPS, 30);
 #endif
   }
+
+  const std::string kOutputStream = absl::GetFlag(FLAGS_output_stream_name);
+  const std::string kInputStream = absl::GetFlag(FLAGS_input_stream_name);
 
   LOG(INFO) << "Start running the calculator graph.";
   ASSIGN_OR_RETURN(mediapipe::OutputStreamPoller poller,
