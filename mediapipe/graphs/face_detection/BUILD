@@ -32,9 +32,7 @@ cc_library(
 cc_library(
     name = "desktop_live_calculators",
     deps = [
-        "//mediapipe/calculators/core:flow_limiter_calculator",
-        "//mediapipe/calculators/util:annotation_overlay_calculator",
-        "//mediapipe/calculators/util:detections_to_render_data_calculator",
+        ":desktop_live_commons",
         "//mediapipe/modules/face_detection:face_detection_front_cpu",
     ],
 )
@@ -42,11 +40,34 @@ cc_library(
 cc_library(
     name = "desktop_live_gpu_calculators",
     deps = [
+        ":desktop_live_commons",
+        "//mediapipe/modules/face_detection:face_detection_front_gpu",
+    ],
+)
+
+cc_library(
+    name = "desktop_live_back_calculators",
+    deps = [
+        ":desktop_live_commons",
+        "//mediapipe/modules/face_detection:face_detection_back_cpu",
+    ],
+)
+
+cc_library(
+    name = "desktop_live_back_gpu_calculators",
+    deps = [
+        ":desktop_live_commons",
+        "//mediapipe/modules/face_detection:face_detection_back_gpu",
+    ],
+)
+
+cc_library(
+    name = "desktop_live_commons",
+    deps = [
         "//mediapipe/calculators/core:flow_limiter_calculator",
         "//mediapipe/calculators/util:annotation_overlay_calculator",
         "//mediapipe/calculators/util:detections_to_render_data_calculator",
-        "//mediapipe/modules/face_detection:face_detection_front_gpu",
-    ],
+    ]
 )
 
 load(
