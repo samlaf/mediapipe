@@ -12,58 +12,75 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#==== ! Prerequisite ! ====
+# $ sh mediapipe/examples/coral/setup.sh
+#====
+
+# for opencv 3.2 default
 FROM ubuntu:18.04
 
 MAINTAINER <mediapipe@google.com>
 
-WORKDIR /io
 WORKDIR /mediapipe
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        ca-certificates \
-        curl \
-        ffmpeg \
-        git \
-        wget \
-        unzip \
-        python3-dev \
-        python3-opencv \
-        python3-pip \
-        libopencv-core-dev \
-        libopencv-highgui-dev \
-        libopencv-imgproc-dev \
-        libopencv-video-dev \
-        libopencv-calib3d-dev \
-        libopencv-features2d-dev \
-        software-properties-common && \
-    add-apt-repository -y ppa:openjdk-r/ppa && \
-    apt-get update && apt-get install -y openjdk-8-jdk && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Install MediaPipe & Coral deps
 
-RUN pip3 install --upgrade setuptools
-RUN pip3 install wheel
-RUN pip3 install future
-RUN pip3 install six==1.14.0
-RUN pip3 install tensorflow==1.14.0
-RUN pip3 install tf_slim
+COPY update_sources.sh /
+RUN /update_sources.sh
 
-RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN dpkg --add-architecture armhf
+RUN dpkg --add-architecture arm64
+RUN apt-get update && apt-get install -y \
+  build-essential \
+  crossbuild-essential-arm64 \
+  libusb-1.0-0-dev:arm64 \
+  zlibc:arm64 \
+  pkg-config \
+  zip \
+  unzip \
+  curl \
+  wget \
+  git \
+  python \
+  python-pip \
+  python3-pip \
+  python-numpy \
+  vim-common \
+  ca-certificates \
+  emacs \
+  software-properties-common && \
+  add-apt-repository -y ppa:openjdk-r/ppa && \
+  apt-get update && apt-get install -y openjdk-8-jdk
+
+RUN pip install --upgrade setuptools
+RUN pip install future
+RUN pip3 install six
+
+COPY . /mediapipe/
 
 # Install bazel
+# Please match the current MediaPipe Bazel requirements according to docs.
 ARG BAZEL_VERSION=3.7.2
 RUN mkdir /bazel && \
-    wget --no-check-certificate -O /bazel/installer.sh "https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/b\
-azel-${BAZEL_VERSION}-installer-linux-x86_64.sh" && \
+    wget --no-check-certificate -O /bazel/installer.sh "https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh" && \
     wget --no-check-certificate -O  /bazel/LICENSE.txt "https://raw.githubusercontent.com/bazelbuild/bazel/master/LICENSE" && \
     chmod +x /bazel/installer.sh && \
     /bazel/installer.sh  && \
     rm -f /bazel/installer.sh
 
-COPY . /mediapipe/
+# OpenCV (3.2 default in 18.04)
 
-# If we want the docker image to contain the pre-built object_detection_offline_demo binary, do the following
-# RUN bazel build -c opt --define MEDIAPIPE_DISABLE_GPU=1 mediapipe/examples/desktop/demo:object_detection_tensorflow_demo
+RUN apt-get update && apt-get install -y libopencv-dev
+
+# Opencv libs copied from coral device into opencv32_arm64_libs
+
+RUN cp opencv32_arm64_libs/* /usr/lib/aarch64-linux-gnu/.
+
+# Edge tpu header and lib
+
+RUN git clone https://github.com/google-coral/edgetpu.git /edgetpu
+RUN cp /edgetpu/libedgetpu/direct/aarch64/libedgetpu.so.1.0 /usr/lib/aarch64-linux-gnu/libedgetpu.so
+
+# See mediapipe/examples/coral/README.md to finish setup
